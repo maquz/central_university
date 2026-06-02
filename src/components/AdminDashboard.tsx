@@ -1,0 +1,116 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PlusCircle, FileText, Clock, Users, Edit2, Trash2, FileSpreadsheet } from 'lucide-react';
+import { db } from '../firebase';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchQuizzes();
+  }, []);
+
+  const fetchQuizzes = async () => {
+    try {
+      const localQuizzes = JSON.parse(localStorage.getItem('quizzes') || '[]');
+      setQuizzes(localQuizzes);
+      if (db) {
+        const snapshot = await getDocs(collection(db, 'quizzes'));
+        const fbQuizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (fbQuizzes.length > 0) setQuizzes(fbQuizzes);
+      }
+    } catch (e) {
+      console.warn("Firebase fetch failed, using local fallback.");
+    }
+  };
+
+  const handleDelete = async (id: string, index: number) => {
+    if (!window.confirm("Are you sure you want to delete this quiz?")) return;
+    try {
+      if (db) {
+        await deleteDoc(doc(db, 'quizzes', id));
+      } else {
+        throw new Error("No DB");
+      }
+    } catch (e) {
+      const localQuizzes = JSON.parse(localStorage.getItem('quizzes') || '[]');
+      localQuizzes.splice(index, 1);
+      localStorage.setItem('quizzes', JSON.stringify(localQuizzes));
+    }
+    fetchQuizzes();
+  };
+
+  return (
+    <div className="page-container animate-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <h2>Admin Dashboard</h2>
+        <div style={{ display: 'flex', gap: '15px' }}>
+          <button className="btn btn-outline" onClick={() => navigate('/admin/candidates')}>
+            <Users size={20} /> Manage Candidates
+          </button>
+          <button className="btn btn-outline" onClick={() => navigate('/admin/scores')}>
+            <FileSpreadsheet size={20} /> View Scores
+          </button>
+          <button className="btn btn-primary" onClick={() => navigate('/admin/create-quiz')}>
+            <PlusCircle size={20} /> Create New Quiz
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ backgroundColor: 'var(--cu-gold)', padding: '12px', borderRadius: '12px', color: 'white' }}>
+            <FileText size={28} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>{quizzes.length}</h3>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Active Quizzes</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>Your Quizzes</h3>
+      
+      {quizzes.length === 0 ? (
+        <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>No quizzes created yet.</p>
+          <button className="btn btn-outline" onClick={() => navigate('/admin/create-quiz')}>
+            Create your first quiz
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {quizzes.map((q, i) => (
+            <div key={q.id || i} className="glass-panel" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>{q.title}</h4>
+                <div style={{ display: 'flex', gap: '15px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Clock size={16} /> {q.timer} mins</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FileText size={16} /> {q.questions?.length || 0} questions</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ padding: '8px 12px' }}
+                  onClick={() => navigate(`/admin/edit-quiz/${q.id || i}`)}
+                >
+                  <Edit2 size={18} /> Edit
+                </button>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ padding: '8px 12px', color: 'var(--color-needs-improvement)', borderColor: 'var(--color-needs-improvement)' }}
+                  onClick={() => handleDelete(q.id || i.toString(), i)}
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

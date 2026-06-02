@@ -1,0 +1,141 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Download, FileSpreadsheet } from 'lucide-react';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
+
+interface Result {
+  id: string;
+  candidateEmail: string;
+  indexNumber: string;
+  quizTitle: string;
+  score: number;
+  total: number;
+  percentage: number;
+  timestamp: string;
+}
+
+export default function ScoresView() {
+  const navigate = useNavigate();
+  const [results, setResults] = useState<Result[]>([]);
+
+  useEffect(() => {
+    fetchResults();
+  }, []);
+
+  const fetchResults = async () => {
+    try {
+      const local = JSON.parse(localStorage.getItem('results') || '[]');
+      setResults(local);
+      
+      if (db) {
+        const snapshot = await getDocs(collection(db, 'results'));
+        const fbResults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Result));
+        if (fbResults.length > 0) {
+          // Sort by timestamp descending
+          fbResults.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          setResults(fbResults);
+        }
+      }
+    } catch (e) {
+      console.warn("Using local fallback for results");
+    }
+  };
+
+  const getRubric = (pct: number) => {
+    if (pct >= 80) return { label: 'Excellent', emoji: '🏆', color: '#2DD4A8' };
+    if (pct >= 65) return { label: 'Good', emoji: '🎓', color: '#C9A84C' };
+    if (pct >= 50) return { label: 'Average', emoji: '📚', color: '#4A90E2' };
+    return { label: 'Needs Improvement', emoji: '📖', color: '#FF6B6B' };
+  };
+
+  const handleExportCSV = () => {
+    if (results.length === 0) return;
+    
+    // Create CSV header
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Date,Quiz Title,Candidate Email,Index Number,Score,Total,Percentage,Grade\n";
+    
+    results.forEach(r => {
+      const date = new Date(r.timestamp).toLocaleDateString();
+      const grade = getRubric(r.percentage).label;
+      const row = `"${date}","${r.quizTitle}","${r.candidateEmail}","${r.indexNumber}",${r.score},${r.total},${r.percentage},"${grade}"`;
+      csvContent += row + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `exam_results_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="page-container animate-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => navigate('/admin')}>
+            <ArrowLeft size={20} />
+          </button>
+          <h2 style={{ margin: 0 }}>Candidate Scores</h2>
+        </div>
+        <button className="btn btn-primary" onClick={handleExportCSV} disabled={results.length === 0}>
+          <Download size={20} /> Export CSV
+        </button>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '2rem' }}>
+        {results.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+            <FileSpreadsheet size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+            <p>No results have been recorded yet.</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+                  <th style={{ padding: '12px' }}>Date</th>
+                  <th style={{ padding: '12px' }}>Quiz</th>
+                  <th style={{ padding: '12px' }}>Candidate</th>
+                  <th style={{ padding: '12px' }}>Index No.</th>
+                  <th style={{ padding: '12px', textAlign: 'center' }}>Score</th>
+                  <th style={{ padding: '12px', textAlign: 'center' }}>Grade</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r, i) => {
+                  const rubric = getRubric(r.percentage);
+                  return (
+                    <tr key={r.id || i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>
+                        {new Date(r.timestamp).toLocaleDateString()}
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: 600 }}>{r.quizTitle}</td>
+                      <td style={{ padding: '12px' }}>{r.candidateEmail}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{ backgroundColor: 'var(--bg-average)', color: 'var(--color-average)', padding: '4px 8px', borderRadius: '4px', fontWeight: 600, fontSize: '0.9rem' }}>
+                          {r.indexNumber || 'N/A'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center', fontWeight: 'bold' }}>
+                        {r.score}/{r.total} ({r.percentage}%)
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <span style={{ color: rubric.color, fontWeight: 'bold' }}>
+                          {rubric.emoji} {rubric.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
