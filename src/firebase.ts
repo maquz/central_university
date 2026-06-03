@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
@@ -22,9 +22,14 @@ let db: Firestore | null = null;
 let analytics: Analytics | null = null;
 
 try {
-  const app: FirebaseApp = initializeApp(firebaseConfig);
+  // Reuse existing app instance if already initialized (prevents HMR duplicate-app error)
+  const app: FirebaseApp = getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApp();
+
   auth = getAuth(app);
   db = getFirestore(app);
+
   try {
     analytics = getAnalytics(app);
   } catch (_e) {
