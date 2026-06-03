@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Save, Plus, Trash2, ArrowLeft, Calendar } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, doc, addDoc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -11,6 +11,7 @@ export default function QuizCreator() {
 
   const [title, setTitle] = useState('');
   const [timer, setTimer] = useState(30);
+  const [scheduledStart, setScheduledStart] = useState('');
   const [questions, setQuestions] = useState([
     { text: '', options: ['', '', '', ''], correctIndex: 0 }
   ]);
@@ -31,6 +32,7 @@ export default function QuizCreator() {
           const data = docSnap.data();
           setTitle(data.title || '');
           setTimer(data.timer || 30);
+          setScheduledStart(data.scheduledStart || '');
           setQuestions(data.questions || []);
         }
       } else {
@@ -38,7 +40,7 @@ export default function QuizCreator() {
       }
     } catch (e) {
       const existing = JSON.parse(localStorage.getItem('quizzes') || '[]');
-      let quiz;
+      let quiz: any;
       if (isNaN(Number(id))) {
         quiz = existing.find((q: any) => q.id === id);
       } else {
@@ -47,6 +49,7 @@ export default function QuizCreator() {
       if (quiz) {
         setTitle(quiz.title || '');
         setTimer(quiz.timer || 30);
+        setScheduledStart(quiz.scheduledStart || '');
         setQuestions(quiz.questions || []);
       }
     }
@@ -77,10 +80,11 @@ export default function QuizCreator() {
 
   const handleSave = async () => {
     if (!title.trim()) return alert('Please enter a quiz title');
-    
-    const quizData = {
+
+    const quizData: any = {
       title,
       timer,
+      scheduledStart: scheduledStart || null,
       questions,
       updatedAt: new Date().toISOString()
     };
@@ -91,14 +95,13 @@ export default function QuizCreator() {
         if (isEditMode) {
           await setDoc(doc(db, 'quizzes', id!), quizData, { merge: true });
         } else {
-          quizData.createdAt = new Date().toISOString() as any;
+          quizData.createdAt = new Date().toISOString();
           await addDoc(collection(db, 'quizzes'), quizData);
         }
       } else {
-        throw new Error("Firebase unconfigured");
+        throw new Error('Firebase unconfigured');
       }
     } catch (e) {
-      // Fallback to local storage
       const existing = JSON.parse(localStorage.getItem('quizzes') || '[]');
       if (isEditMode) {
         if (isNaN(Number(id))) {
@@ -108,12 +111,12 @@ export default function QuizCreator() {
           existing[Number(id)] = { ...existing[Number(id)], ...quizData };
         }
       } else {
-        quizData.createdAt = new Date().toISOString() as any;
+        quizData.createdAt = new Date().toISOString();
         existing.push({ id: Date.now().toString(), ...quizData });
       }
       localStorage.setItem('quizzes', JSON.stringify(existing));
     }
-    
+
     setLoading(false);
     navigate('/admin');
   };
@@ -130,12 +133,12 @@ export default function QuizCreator() {
       </div>
 
       <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '20px' }}>
           <div className="form-group">
             <label className="form-label">Quiz Title</label>
-            <input 
-              type="text" 
-              className="form-input" 
+            <input
+              type="text"
+              className="form-input"
               placeholder="e.g. Intro to Health Informatics"
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -143,13 +146,30 @@ export default function QuizCreator() {
           </div>
           <div className="form-group">
             <label className="form-label">Time Limit (Minutes)</label>
-            <input 
-              type="number" 
-              className="form-input" 
+            <input
+              type="number"
+              className="form-input"
               value={timer}
               onChange={e => setTimer(parseInt(e.target.value) || 0)}
               min={1}
             />
+          </div>
+          <div className="form-group">
+            <label className="form-label">
+              <Calendar size={14} style={{ display: 'inline', marginRight: 4 }} />
+              Scheduled Start Date & Time
+            </label>
+            <input
+              type="datetime-local"
+              className="form-input"
+              value={scheduledStart}
+              onChange={e => setScheduledStart(e.target.value)}
+            />
+            {scheduledStart && (
+              <small style={{ color: 'var(--cu-gold)', marginTop: 4, display: 'block' }}>
+                Candidates cannot start before {new Date(scheduledStart).toLocaleString()}
+              </small>
+            )}
           </div>
         </div>
       </div>
@@ -157,20 +177,20 @@ export default function QuizCreator() {
       {questions.map((q, qIndex) => (
         <div key={qIndex} className="glass-panel" style={{ padding: '2rem', marginBottom: '1.5rem', position: 'relative' }}>
           <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
-            <button 
+            <button
               onClick={() => removeQuestion(qIndex)}
               style={{ background: 'none', border: 'none', color: 'var(--color-needs-improvement)', cursor: 'pointer' }}
             >
               <Trash2 size={20} />
             </button>
           </div>
-          
+
           <h4 style={{ margin: '0 0 1rem 0' }}>Question {qIndex + 1}</h4>
-          
+
           <div className="form-group">
-            <input 
-              type="text" 
-              className="form-input" 
+            <input
+              type="text"
+              className="form-input"
               placeholder="Enter question text here..."
               value={q.text}
               onChange={e => updateQuestion(qIndex, 'text', e.target.value)}
@@ -180,16 +200,16 @@ export default function QuizCreator() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '1.5rem' }}>
             {q.options.map((opt, optIndex) => (
               <div key={optIndex} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="radio" 
+                <input
+                  type="radio"
                   name={`correct-${qIndex}`}
                   checked={q.correctIndex === optIndex}
                   onChange={() => updateQuestion(qIndex, 'correctIndex', optIndex)}
                   style={{ width: '18px', height: '18px', accentColor: 'var(--cu-red)' }}
                 />
-                <input 
-                  type="text" 
-                  className="form-input" 
+                <input
+                  type="text"
+                  className="form-input"
                   placeholder={`Option ${optIndex + 1}`}
                   value={opt}
                   onChange={e => updateOption(qIndex, optIndex, e.target.value)}

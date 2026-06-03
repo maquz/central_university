@@ -10,6 +10,8 @@ import CandidateDashboard from './components/CandidateDashboard';
 import ExamView from './components/ExamView';
 import Results from './components/Results';
 
+import AdminApproval from './components/AdminApproval';
+
 const ProtectedRoute = ({ children, requiredRole }: { children: JSX.Element, requiredRole?: string }) => {
   const role = localStorage.getItem('userRole');
   if (!role) {
@@ -38,6 +40,7 @@ function App() {
           <Route path="edit-quiz/:id" element={<QuizCreator />} />
           <Route path="candidates" element={<CandidateManagement />} />
           <Route path="scores" element={<ScoresView />} />
+          <Route path="approvals" element={<AdminApproval />} />
         </Route>
 
         {/* Candidate Routes */}
