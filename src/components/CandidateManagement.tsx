@@ -81,10 +81,10 @@ export default function CandidateManagement() {
 
     try {
       if (db) {
-        // Run sequentially for simplicity, or Promise.all
-        await Promise.all(newCandidates.map(c => setDoc(doc(db, 'candidates', c.email), c)));
+        const firestoreDb = db;
+        await Promise.all(newCandidates.map(c => setDoc(doc(firestoreDb, 'candidates', c.email), c)));
       } else {
-        throw new Error("No DB");
+        throw new Error('No DB');
       }
     } catch (err) {
       // Local fallback mapping

@@ -9,10 +9,9 @@ import ScoresView from './components/ScoresView';
 import CandidateDashboard from './components/CandidateDashboard';
 import ExamView from './components/ExamView';
 import Results from './components/Results';
-
 import AdminApproval from './components/AdminApproval';
 
-const ProtectedRoute = ({ children, requiredRole }: { children: JSX.Element, requiredRole?: string }) => {
+const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactElement, requiredRole?: string }) => {
   const role = localStorage.getItem('userRole');
   if (!role) {
     return <Navigate to="/" replace />;

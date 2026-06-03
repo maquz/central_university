@@ -1,7 +1,11 @@
 import { initializeApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import type { Auth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics } from "firebase/analytics";
+import type { Firestore } from 'firebase/firestore';
+import { getAnalytics } from 'firebase/analytics';
+import type { Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1GjTHszVRVYVKpD_7vOKyR-HYOqlG8hI",
@@ -13,20 +17,21 @@ const firebaseConfig = {
   measurementId: "G-KZTKQZV6SL"
 };
 
-let app, auth, db, analytics;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let analytics: Analytics | null = null;
 
 try {
-  app = initializeApp(firebaseConfig);
+  const app: FirebaseApp = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  // Analytics is optional and can fail in some environments (like extensions), so we catch it
   try {
     analytics = getAnalytics(app);
-  } catch (e) {
-    console.warn("Analytics initialization skipped");
+  } catch (_e) {
+    console.warn('Analytics initialization skipped');
   }
 } catch (error) {
-  console.error("Firebase initialization error", error);
+  console.error('Firebase initialization error', error);
 }
 
 export { auth, db, analytics };
