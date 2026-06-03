@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { GraduationCap, ShieldCheck, Mail, Lock, AlertCircle, Hash } from 'lucide-react';
 
@@ -84,19 +84,20 @@ export default function Login() {
     setLoading(true);
 
     try {
-      if (role === 'candidate') {
-        const isValidIndex = await verifyCandidateIndex();
-        if (!isValidIndex) {
-          throw new Error('Invalid Candidate Email or Index Number. Please contact your administrator.');
-        }
-      }
-
       if (!auth) throw new Error("Firebase not initialized. Please update firebaseConfig.");
       
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
+      }
+
+      if (role === 'candidate') {
+        const isValidIndex = await verifyCandidateIndex();
+        if (!isValidIndex) {
+          await signOut(auth);
+          throw new Error('Invalid Candidate Email or Index Number. Please contact your administrator.');
+        }
       }
       
       if (role === 'admin') {
