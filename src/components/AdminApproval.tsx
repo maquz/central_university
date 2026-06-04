@@ -24,13 +24,14 @@ export default function AdminApproval() {
     } catch (e) {}
   };
 
-  const handleAction = async (email: string, action: 'approved' | 'rejected') => {
+  const handleAction = async (email: string, action: 'approved-admin' | 'approved-editor' | 'rejected') => {
     try {
       if (db) {
         if (action === 'rejected') {
           await deleteDoc(doc(db, 'admins', email));
         } else {
-          await setDoc(doc(db, 'admins', email), { email, status: 'approved' });
+          const level = action === 'approved-admin' ? 'admin' : 'editor';
+          await setDoc(doc(db, 'admins', email), { email, status: 'approved', level });
         }
       }
     } catch(e) {}
@@ -41,7 +42,10 @@ export default function AdminApproval() {
       local = local.filter((a: any) => a.email !== email);
     } else {
       const idx = local.findIndex((a: any) => a.email === email);
-      if (idx >= 0) local[idx].status = 'approved';
+      if (idx >= 0) {
+        local[idx].status = 'approved';
+        local[idx].level = action === 'approved-admin' ? 'admin' : 'editor';
+      }
     }
     localStorage.setItem('admins', JSON.stringify(local));
 
@@ -70,8 +74,11 @@ export default function AdminApproval() {
               <div key={admin.email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                 <span style={{ fontWeight: 600 }}>{admin.email}</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => handleAction(admin.email, 'approved')} className="btn btn-outline" style={{ borderColor: 'var(--color-excellent)', color: 'var(--color-excellent)', padding: '6px 12px' }}>
-                    <CheckCircle size={18} /> Approve
+                  <button onClick={() => handleAction(admin.email, 'approved-admin')} className="btn btn-outline" style={{ borderColor: 'var(--color-excellent)', color: 'var(--color-excellent)', padding: '6px 12px' }}>
+                    <CheckCircle size={18} /> Approve as Admin
+                  </button>
+                  <button onClick={() => handleAction(admin.email, 'approved-editor')} className="btn btn-outline" style={{ borderColor: 'var(--cu-gold)', color: 'var(--cu-gold)', padding: '6px 12px' }}>
+                    <CheckCircle size={18} /> Approve as Editor
                   </button>
                   <button onClick={() => handleAction(admin.email, 'rejected')} className="btn btn-outline" style={{ borderColor: 'var(--color-needs-improvement)', color: 'var(--color-needs-improvement)', padding: '6px 12px' }}>
                     <XCircle size={18} /> Reject
@@ -87,8 +94,11 @@ export default function AdminApproval() {
         <h3 style={{ marginBottom: '1.5rem' }}>Approved Admins ({approvedAdmins.length})</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {approvedAdmins.map(admin => (
-            <div key={admin.email} style={{ padding: '10px', borderBottom: '1px solid var(--border-color)' }}>
-              {admin.email}
+            <div key={admin.email} style={{ padding: '10px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
+              <span>{admin.email}</span>
+              <span style={{ backgroundColor: 'var(--bg-average)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                {admin.level === 'admin' ? 'System Admin' : 'Editor'}
+              </span>
             </div>
           ))}
         </div>

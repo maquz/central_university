@@ -126,7 +126,7 @@ export default function QuizCreator() {
   return (
     <div className="page-container animate-fade-in">
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '2rem' }}>
-        <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => navigate('/admin')}>
+        <button type="button" className="btn btn-outline" style={{ padding: '8px' }} onClick={() => navigate('/editor')}>
           <ArrowLeft size={20} />
         </button>
         <h2 style={{ margin: 0 }}>{isEditMode ? 'Edit Quiz' : 'Create New Quiz'}</h2>

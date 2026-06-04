@@ -85,7 +85,7 @@ export default function ScoresView() {
 
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => navigate('/admin')}>
+          <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => navigate('/editor')}>
             <ArrowLeft size={20} />
           </button>
           <h2 style={{ margin: 0 }}>Candidate Scores</h2>

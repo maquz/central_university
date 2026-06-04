@@ -54,21 +54,18 @@ export default function AdminDashboard() {
         <hr style={{ margin: '10px 0 20px' }} />
       </div>
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2>Admin Dashboard</h2>
+        <h2>Editor Dashboard</h2>
         <div style={{ display: 'flex', gap: '15px' }}>
-          <button className="btn btn-outline" onClick={() => navigate('/admin/approvals')}>
-            <ShieldAlert size={20} /> Manage Admins
-          </button>
-          <button className="btn btn-outline" onClick={() => navigate('/admin/candidates')}>
+          <button className="btn btn-outline" onClick={() => navigate('/editor/candidates')}>
             <Users size={20} /> Candidates
           </button>
-          <button className="btn btn-outline" onClick={() => navigate('/admin/scores')}>
+          <button className="btn btn-outline" onClick={() => navigate('/editor/scores')}>
             <FileSpreadsheet size={20} /> Scores
           </button>
           <button className="btn btn-outline" onClick={() => window.print()}>
             <Printer size={20} /> Print Report
           </button>
-          <button className="btn btn-primary" onClick={() => navigate('/admin/create-quiz')}>
+          <button className="btn btn-primary" onClick={() => navigate('/editor/create-quiz')}>
             <PlusCircle size={20} /> New Quiz
           </button>
         </div>
@@ -91,7 +88,7 @@ export default function AdminDashboard() {
       {quizzes.length === 0 ? (
         <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>No quizzes created yet.</p>
-          <button className="btn btn-outline" onClick={() => navigate('/admin/create-quiz')}>
+          <button className="btn btn-outline" onClick={() => navigate('/editor/create-quiz')}>
             Create your first quiz
           </button>
         </div>
@@ -120,7 +117,7 @@ export default function AdminDashboard() {
                 <button 
                   className="btn btn-outline" 
                   style={{ padding: '8px 12px' }}
-                  onClick={() => navigate(`/admin/edit-quiz/${q.id || i}`)}
+                  onClick={() => navigate(`/editor/edit-quiz/${q.id || i}`)}
                 >
                   <Edit2 size={18} /> Edit
                 </button>

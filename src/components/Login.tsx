@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getDoc, doc, setDoc } from 'firebase/firestore';
-import { GraduationCap, ShieldCheck, Mail, Lock, AlertCircle, Hash } from 'lucide-react';
+import { getDoc, doc, setDoc, getDocs, collection } from 'firebase/firestore';
+import { GraduationCap, ShieldCheck, Mail, Lock, AlertCircle, Hash, Users } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -36,9 +37,12 @@ export default function Login() {
   const checkAdminStatus = async (userEmail: string) => {
     try {
       if (db) {
+        const snapshot = await getDocs(collection(db, 'admins'));
+        if (snapshot.empty) return { status: 'approved', level: 'admin' };
+        
         const docSnap = await getDoc(doc(db, 'admins', userEmail));
         if (docSnap.exists()) {
-          return docSnap.data().status; // 'approved' or 'pending'
+          return { status: docSnap.data().status, level: docSnap.data().level || 'editor' };
         }
       }
     } catch (e) {}
@@ -47,26 +51,24 @@ export default function Login() {
     const local = JSON.parse(localStorage.getItem('admins') || '[]');
     const found = local.find((a: any) => a.email === userEmail);
     // If no existing admin at all, auto-approve the first one for bootstrapping
-    if (local.length === 0) return 'approved';
-    return found ? found.status : 'not_found';
+    if (local.length === 0) return { status: 'approved', level: 'admin' };
+    return found ? { status: found.status, level: found.level || 'editor' } : { status: 'not_found', level: 'editor' };
   };
 
   const registerAdmin = async (userEmail: string) => {
-    // If no admins exist, make the first one approved. Otherwise pending.
     let status = 'pending';
+    let local = JSON.parse(localStorage.getItem('admins') || '[]');
     
     try {
       if (db) {
-        // We really should check how many admins exist, but for simplicity, default to pending. 
-        // Wait, if it's the very first time, they get locked out. We'll rely on local fallback logic for the first local one, 
-        // or just set pending. Actually, let's make it so if they are the first local admin, approved.
+        const snapshot = await getDocs(collection(db, 'admins'));
+        if (snapshot.empty) status = 'approved';
       }
-    } catch(e) {}
+    } catch(e) {
+      if (local.length === 0) status = 'approved';
+    }
 
-    const local = JSON.parse(localStorage.getItem('admins') || '[]');
-    if (local.length === 0) status = 'approved';
-
-    const newAdmin = { email: userEmail, status };
+    const newAdmin = { email: userEmail, status, level: status === 'approved' ? 'admin' : 'editor' };
     
     try {
       if (db) await setDoc(doc(db, 'admins', userEmail), newAdmin);
@@ -90,6 +92,14 @@ export default function Login() {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
+        // Option A: Auto-register candidate details upon sign up
+        if (role === 'candidate' && db) {
+          await setDoc(doc(db, 'candidates', email), {
+            id: email,
+            email,
+            indexNumber
+          });
+        }
       }
 
       if (role === 'candidate') {
@@ -106,16 +116,20 @@ export default function Login() {
           if (status === 'pending') {
             throw new Error('Admin registration successful. Your account is pending approval by an existing Admin.');
           }
+          localStorage.setItem('staffLevel', 'admin');
         } else {
-          const status = await checkAdminStatus(email);
-          if (status === 'pending') {
+          const result = await checkAdminStatus(email);
+          if (result.status === 'pending') {
             throw new Error('Your admin account is still pending approval.');
           }
-          if (status === 'not_found' && !isLogin) {
+          if (result.status === 'not_found' && !isLogin) {
             // Should not happen as we just registered
-          } else if (status === 'not_found' && isLogin) {
+          } else if (result.status === 'not_found' && isLogin) {
             // Maybe they registered before we added this logic. We'll auto-approve for backwards compatibility in demo.
             await registerAdmin(email);
+            localStorage.setItem('staffLevel', 'admin');
+          } else {
+            localStorage.setItem('staffLevel', result.level);
           }
         }
       }
@@ -124,7 +138,8 @@ export default function Login() {
       localStorage.setItem('userEmail', email);
       
       if (role === 'admin') {
-        navigate('/admin');
+        const level = localStorage.getItem('staffLevel');
+        navigate(level === 'admin' ? '/admin' : '/editor');
       } else {
         navigate('/candidate');
       }
@@ -152,12 +167,8 @@ export default function Login() {
     <div className="page-container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="glass-panel animate-fade-in" style={{ maxWidth: 450, width: '100%', padding: '2.5rem', textAlign: 'center' }}>
         
-        <div style={{ 
-          width: 80, height: 80, backgroundColor: 'var(--cu-red)', borderRadius: '50%', 
-          margin: '0 auto 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 10px rgba(179,33,40,0.3)'
-        }}>
-          <ShieldCheck color="white" size={40} />
+        <div style={{ margin: '0 auto 1.5rem', display: 'flex', justifyContent: 'center' }}>
+          <img src={logo} alt="CU Health Informatics" style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
         </div>
         
         <h1 style={{ marginBottom: '0.5rem' }}>CU Health Informatics</h1>
@@ -187,7 +198,7 @@ export default function Login() {
             className={`btn ${role === 'admin' ? 'btn-primary' : 'btn-outline'}`}
             style={{ flex: 1 }}
           >
-            <ShieldCheck size={18} /> Admin
+            <Users size={18} /> Staff
           </button>
         </div>
 

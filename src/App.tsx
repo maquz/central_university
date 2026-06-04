@@ -10,14 +10,20 @@ import CandidateDashboard from './components/CandidateDashboard';
 import ExamView from './components/ExamView';
 import Results from './components/Results';
 import AdminApproval from './components/AdminApproval';
+import SystemAdminDashboard from './components/SystemAdminDashboard';
 
-const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactElement, requiredRole?: string }) => {
+const ProtectedRoute = ({ children, requiredRole, requiredLevel }: { children: React.ReactElement, requiredRole?: string, requiredLevel?: string }) => {
   const role = localStorage.getItem('userRole');
+  const level = localStorage.getItem('staffLevel');
+
   if (!role) {
     return <Navigate to="/" replace />;
   }
   if (requiredRole && role !== requiredRole) {
-    return <Navigate to={role === 'admin' ? '/admin' : '/candidate'} replace />;
+    return <Navigate to={role === 'admin' ? '/editor' : '/candidate'} replace />;
+  }
+  if (requiredLevel && requiredLevel === 'admin' && level !== 'admin') {
+     return <Navigate to="/editor" replace />;
   }
   return children;
 };
@@ -28,8 +34,18 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         
-        {/* Admin Routes */}
+        {/* System Admin Routes */}
         <Route path="/admin" element={
+          <ProtectedRoute requiredRole="admin" requiredLevel="admin">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<SystemAdminDashboard />} />
+          <Route path="approvals" element={<AdminApproval />} />
+        </Route>
+
+        {/* Editor Routes */}
+        <Route path="/editor" element={
           <ProtectedRoute requiredRole="admin">
             <Layout />
           </ProtectedRoute>
@@ -39,7 +55,6 @@ function App() {
           <Route path="edit-quiz/:id" element={<QuizCreator />} />
           <Route path="candidates" element={<CandidateManagement />} />
           <Route path="scores" element={<ScoresView />} />
-          <Route path="approvals" element={<AdminApproval />} />
         </Route>
 
         {/* Candidate Routes */}
