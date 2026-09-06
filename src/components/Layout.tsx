@@ -20,6 +20,18 @@ export default function Layout() {
     navigate('/');
   };
 
+  const handleHomeNavigation = () => {
+    if (role === 'admin') {
+      if (level === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/editor');
+      }
+    } else {
+      navigate('/candidate');
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header style={{ 
@@ -34,13 +46,16 @@ export default function Layout() {
         top: 0,
         zIndex: 10
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div onClick={handleHomeNavigation} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
           <img src={logo} alt="CU Health Informatics" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
           <h2 style={{ color: 'white', margin: 0, fontSize: '1.4rem' }}>CU Health Informatics</h2>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span style={{ fontWeight: 600, fontSize: '0.9rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '20px' }}>
+          <span 
+            onClick={handleHomeNavigation}
+            style={{ fontWeight: 600, fontSize: '0.9rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '20px', cursor: 'pointer' }}
+          >
             {role === 'admin' ? (level === 'admin' ? 'System Administrator' : 'Editor') : 'Candidate'}
           </span>
           <button 
