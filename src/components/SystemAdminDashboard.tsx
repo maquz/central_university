@@ -41,7 +41,7 @@ export default function SystemAdminDashboard() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="glass-panel" onClick={() => navigate('/admin/approvals')} style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}>
           <div style={{ backgroundColor: 'var(--cu-red)', padding: '12px', borderRadius: '12px', color: 'white' }}>
             <Activity size={28} />
           </div>
@@ -50,7 +50,7 @@ export default function SystemAdminDashboard() {
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>System Admins</p>
           </div>
         </div>
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="glass-panel" onClick={() => navigate('/admin/approvals')} style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}>
           <div style={{ backgroundColor: 'var(--cu-gold)', padding: '12px', borderRadius: '12px', color: 'white' }}>
             <Users size={28} />
           </div>
@@ -59,7 +59,7 @@ export default function SystemAdminDashboard() {
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Editors</p>
           </div>
         </div>
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="glass-panel" onClick={() => navigate('/editor/candidates')} style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}>
           <div style={{ backgroundColor: 'var(--color-average)', padding: '12px', borderRadius: '12px', color: 'white' }}>
             <Users size={28} />
           </div>
@@ -68,7 +68,7 @@ export default function SystemAdminDashboard() {
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Candidates</p>
           </div>
         </div>
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="glass-panel" onClick={() => navigate('/editor')} style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}>
           <div style={{ backgroundColor: 'var(--color-excellent)', padding: '12px', borderRadius: '12px', color: 'white' }}>
             <FileSpreadsheet size={28} />
           </div>
